@@ -1,0 +1,1832 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>GFXToolBox — by Balso</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+:root {
+  --glass: rgba(255,255,255,0.72);
+  --glass-strong: rgba(255,255,255,0.90);
+  --glass-border: rgba(255,255,255,0.88);
+  --glass-border-sub: rgba(200,210,230,0.55);
+  --blur: blur(32px) saturate(200%);
+  --blur-sm: blur(16px) saturate(180%);
+  --accent: #007AFF;
+  --accent2: #5856D6;
+  --green: #34C759;
+  --red: #FF3B30;
+  --orange: #FF9500;
+  --shadow: 0 8px 40px rgba(80,120,200,0.13), 0 1.5px 0 rgba(255,255,255,0.95) inset;
+  --shadow-sm: 0 4px 18px rgba(80,120,200,0.10), 0 1px 0 rgba(255,255,255,0.9) inset;
+  --r-xl: 24px; --r-lg: 18px; --r-md: 12px;
+  --text: #1a1f2e; --text2: #6b7280; --text3: #9ca3af;
+  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', system-ui, sans-serif;
+  --bg: #eef2fa;
+}
+html, body { min-height: 100dvh; font-family: var(--font); background: var(--bg); color: var(--text); overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 60% at 15% 10%, rgba(120,160,255,0.22) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 50% at 85% 20%, rgba(180,140,255,0.14) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 50% at 50% 90%, rgba(100,200,255,0.12) 0%, transparent 70%);
+}
+.wrap { position: relative; z-index: 1; min-height: 100dvh; display: flex; flex-direction: column; align-items: center; padding: max(env(safe-area-inset-top,16px),20px) 16px max(env(safe-area-inset-bottom,16px),24px); }
+
+/* NAV */
+.nav { width: 100%; max-width: 980px; display: flex; align-items: center; justify-content: space-between; padding: 13px 20px; background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); border: 1px solid var(--glass-border); border-radius: 20px; box-shadow: var(--shadow-sm); margin-bottom: 24px; }
+.logo { display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 700; letter-spacing: -0.5px; color: var(--text); }
+.logo-mark { width: 33px; height: 33px; background: linear-gradient(135deg, #007AFF, #5856D6); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 16px; box-shadow: 0 3px 12px rgba(0,122,255,0.35); }
+.logo-by { font-size: 11px; font-weight: 500; color: var(--text3); margin-top: 1px; }
+.nav-pill { font-size: 11px; font-weight: 600; color: var(--accent); background: rgba(0,122,255,0.09); border: 1px solid rgba(0,122,255,0.18); padding: 4px 12px; border-radius: 20px; }
+
+/* CARD */
+.card { width: 100%; max-width: 980px; background: var(--glass); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); border: 1px solid var(--glass-border); border-radius: var(--r-xl); box-shadow: var(--shadow); padding: 28px; margin-bottom: 16px; }
+.hidden { display: none !important; }
+
+/* DROP ZONE */
+.drop-zone { border: 2px dashed rgba(0,122,255,0.25); border-radius: var(--r-lg); padding: 60px 28px; text-align: center; cursor: pointer; transition: all 0.25s ease; background: rgba(255,255,255,0.35); }
+.drop-zone:hover, .drop-zone.over { border-color: var(--accent); background: rgba(0,122,255,0.05); }
+.drop-icon-wrap { width: 68px; height: 68px; margin: 0 auto 18px; background: var(--glass-strong); border: 1px solid var(--glass-border); border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 30px; box-shadow: var(--shadow-sm); transition: transform 0.25s; }
+.drop-zone:hover .drop-icon-wrap { transform: translateY(-4px); }
+.drop-title { font-size: 19px; font-weight: 650; color: var(--text); margin-bottom: 7px; letter-spacing: -0.3px; }
+.drop-sub { font-size: 14px; color: var(--text2); margin-bottom: 22px; line-height: 1.55; }
+.btn-upload { display: inline-flex; align-items: center; gap: 7px; padding: 13px 26px; background: linear-gradient(135deg,#007AFF,#5856D6); border: none; border-radius: 50px; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 18px rgba(0,122,255,0.38); transition: all 0.22s; font-family: var(--font); }
+.btn-upload:hover { transform: translateY(-2px); box-shadow: 0 8px 26px rgba(0,122,255,0.45); }
+#file-input { display: none; }
+
+/* PROCESSING */
+#proc-section { text-align: center; padding: 52px 0; }
+.spin-ring { width: 64px; height: 64px; margin: 0 auto 22px; border-radius: 50%; border: 3px solid transparent; border-top-color: var(--accent); border-right-color: rgba(0,122,255,0.3); animation: spin 0.9s linear infinite; position: relative; }
+.spin-ring::after { content: ''; position: absolute; inset: 7px; border-radius: 50%; border: 2.5px solid transparent; border-bottom-color: var(--accent2); border-left-color: rgba(88,86,214,0.25); animation: spin 1.5s linear infinite reverse; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.proc-title { font-size: 17px; font-weight: 650; color: var(--text); margin-bottom: 6px; }
+.proc-sub { font-size: 13px; color: var(--text2); }
+.prog-track { height: 4px; background: rgba(0,0,0,0.08); border-radius: 2px; margin: 24px auto 0; max-width: 300px; overflow: hidden; }
+.prog-fill { height: 100%; background: linear-gradient(90deg,var(--accent),var(--accent2)); border-radius: 2px; width: 0%; transition: width 0.5s ease; }
+
+/* RESULT LAYOUT — side by side on wide screens */
+.result-inner { display: flex; gap: 20px; align-items: flex-start; }
+.result-left { flex: 1 1 0; min-width: 0; }
+.result-right { width: 320px; flex-shrink: 0; display: flex; flex-direction: column; gap: 0; }
+@media (max-width: 780px) {
+  .result-inner { flex-direction: column; }
+  .result-right { width: 100%; }
+  .preview-area { position: sticky; top: 6px; z-index: 30; max-height: 34vh; margin-bottom: 8px; box-shadow: 0 8px 24px rgba(20,20,30,0.18); }
+  #out-canvas { max-height: 34vh; }
+  .preview-hint { margin-bottom: 8px; }
+}
+
+.res-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+.res-title { font-size: 18px; font-weight: 650; color: var(--text); display: flex; align-items: center; gap: 8px; letter-spacing: -0.3px; }
+.badge-ok { font-size: 11px; font-weight: 600; color: var(--green); background: rgba(52,199,89,0.12); border: 1px solid rgba(52,199,89,0.28); padding: 3px 9px; border-radius: 20px; }
+
+/* CANVAS PREVIEW */
+.preview-area { border-radius: var(--r-lg); overflow: auto; background: repeating-conic-gradient(#d0d7e8 0% 25%, #e8edf8 0% 50%) 0 0 / 20px 20px; border: 1px solid var(--glass-border-sub); margin-bottom: 12px; display: flex; align-items: center; justify-content: center; min-height: 200px; max-height: 460px; position: relative; }
+.zoom-stage { position: relative; display: inline-block; line-height: 0; }
+#out-canvas { max-width: 100%; max-height: 380px; display: block; border-radius: 4px; position: relative; z-index: 1; }
+.zoom-stage.zoomed #out-canvas { max-width: none; max-height: none; }
+#adj-canvas { display: none; }
+.brush-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; cursor: crosshair; display: none; }
+.brush-overlay.active { display: block; }
+#brush-cursor { position: absolute; border-radius: 50%; pointer-events: none; z-index: 10; display: none; border: 2px solid rgba(0,122,255,0.7); background: rgba(0,122,255,0.08); transform: translate(-50%,-50%); }
+.preview-hint { font-size: 12px; color: var(--text3); text-align: center; margin-bottom: 14px; }
+.divider { height: 1px; background: var(--glass-border-sub); margin: 16px 0; }
+
+/* TOOLS */
+.tools-box { background: rgba(255,255,255,0.55); border: 1px solid var(--glass-border-sub); border-radius: var(--r-lg); padding: 14px 16px; margin-bottom: 14px; }
+.tools-label { font-size: 11px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.9px; margin-bottom: 12px; }
+.tools-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.mode-group { display: flex; gap: 6px; background: rgba(0,0,0,0.05); border-radius: 50px; padding: 5px; border: 1px solid rgba(0,0,0,0.07); }
+.mode-btn { padding: 7px 14px; border-radius: 50px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; background: transparent; color: var(--text2); font-family: var(--font); }
+.mode-btn.active { background: #fff; color: var(--accent); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.mode-btn.active.erase-btn { color: var(--red); }
+.size-group { display: flex; align-items: center; gap: 9px; background: rgba(255,255,255,0.7); border: 1px solid var(--glass-border-sub); border-radius: 50px; padding: 7px 14px; }
+.size-label { font-size: 12px; color: var(--text2); font-weight: 500; }
+input[type=range].size-slider { width: 80px; accent-color: var(--accent); cursor: pointer; }
+.size-val { font-size: 12px; font-weight: 700; color: var(--text); min-width: 22px; }
+.zoom-group { display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.7); border: 1px solid var(--glass-border-sub); border-radius: 50px; padding: 5px 8px; }
+.zoom-btn { width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--glass-border-sub); background: #fff; color: var(--text); font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.18s; font-family: var(--font); line-height: 1; }
+.zoom-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+.zoom-btn:disabled { opacity: 0.4; cursor: default; }
+.zoom-btn:disabled:hover { background: #fff; color: var(--text); border-color: var(--glass-border-sub); }
+.zoom-val { font-size: 12px; font-weight: 700; color: var(--text); min-width: 42px; text-align: center; cursor: pointer; }
+.btn-undo { display: inline-flex; align-items: center; gap: 7px; padding: 12px 18px; background: rgba(255,255,255,0.7); border: 1px solid var(--glass-border-sub); border-radius: 50px; color: var(--text); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.22s; font-family: var(--font); }
+.btn-undo:hover { background: var(--glass-strong); }
+.btn-undo:disabled { opacity: 0.4; cursor: default; }
+.btn-undo:disabled:hover { background: rgba(255,255,255,0.7); }
+.edit-toggle-wrap { display: flex; align-items: center; gap: 8px; cursor: pointer; background: rgba(255,255,255,0.7); border: 1px solid var(--glass-border-sub); border-radius: 50px; padding: 7px 14px; }
+.edit-label { font-size: 13px; font-weight: 500; color: var(--text2); user-select: none; }
+.tog { width: 36px; height: 22px; background: rgba(0,0,0,0.15); border-radius: 50px; position: relative; transition: background 0.22s; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0; }
+.tog.on { background: var(--accent); }
+.tog-k { width: 18px; height: 18px; background: #fff; border-radius: 50%; position: absolute; top: 1px; left: 1px; transition: transform 0.22s cubic-bezier(0.4,0,0.2,1); box-shadow: 0 1px 4px rgba(0,0,0,0.25); }
+.tog.on .tog-k { transform: translateX(14px); }
+
+/* ACTIONS */
+.actions-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn-dl { flex: 1; min-width: 160px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 20px; background: linear-gradient(135deg,#34C759,#30D158); border: none; border-radius: 50px; color: #fff; font-size: 15px; font-weight: 650; cursor: pointer; box-shadow: 0 4px 18px rgba(52,199,89,0.35); transition: all 0.22s; font-family: var(--font); }
+.btn-dl:hover { transform: translateY(-2px); box-shadow: 0 8px 26px rgba(52,199,89,0.45); }
+.btn-reset { display: inline-flex; align-items: center; gap: 7px; padding: 12px 18px; background: rgba(255,59,48,0.08); border: 1px solid rgba(255,59,48,0.22); border-radius: 50px; color: var(--red); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.22s; font-family: var(--font); }
+.btn-reset:hover { background: rgba(255,59,48,0.14); }
+.btn-new { display: inline-flex; align-items: center; gap: 7px; padding: 11px 18px; background: var(--glass); border: 1px solid var(--glass-border-sub); border-radius: 50px; color: var(--text2); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.22s; font-family: var(--font); }
+.btn-new:hover { background: var(--glass-strong); }
+
+/* ══════════════════════════════════════
+   PANNEAU RETOUCHES LIGHTROOM
+══════════════════════════════════════ */
+.adj-panel { background: rgba(255,255,255,0.55); border: 1px solid var(--glass-border-sub); border-radius: var(--r-lg); overflow: hidden; }
+
+/* Tabs */
+.adj-tabs { display: flex; border-bottom: 1px solid var(--glass-border-sub); background: rgba(255,255,255,0.4); overflow-x: auto; scrollbar-width: none; }
+.adj-tabs::-webkit-scrollbar { display: none; }
+.adj-tab { flex: 1; min-width: 60px; padding: 10px 6px; font-size: 11px; font-weight: 600; color: var(--text3); text-align: center; cursor: pointer; border: none; background: transparent; font-family: var(--font); transition: all 0.18s; border-bottom: 2px solid transparent; white-space: nowrap; }
+.adj-tab.active { color: var(--accent); border-bottom-color: var(--accent); background: rgba(0,122,255,0.04); }
+.adj-tab:hover:not(.active) { color: var(--text2); background: rgba(0,0,0,0.03); }
+
+/* Tab panels */
+.adj-body { padding: 14px 16px; }
+.adj-pane { display: none; }
+.adj-pane.active { display: block; }
+
+/* Section inside panel */
+.adj-section { margin-bottom: 16px; }
+.adj-section:last-child { margin-bottom: 0; }
+.adj-section-title { font-size: 10px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px; }
+
+/* Slider rows */
+.adj-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.adj-row:last-child { margin-bottom: 0; }
+.adj-row-label { font-size: 11px; font-weight: 500; color: var(--text2); width: 80px; flex-shrink: 0; }
+.adj-row-slider { flex: 1; -webkit-appearance: none; appearance: none; height: 4px; border-radius: 2px; outline: none; cursor: pointer; background: linear-gradient(to right, var(--accent) 0%, var(--accent) var(--pct, 50%), rgba(0,0,0,0.12) var(--pct, 50%)); }
+.adj-row-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #fff; border: 2px solid var(--accent); box-shadow: 0 1px 6px rgba(0,0,0,0.18); cursor: pointer; }
+.adj-row-val { font-size: 11px; font-weight: 700; color: var(--text); width: 34px; text-align: right; flex-shrink: 0; }
+
+/* Reset single slider */
+.adj-row-reset { font-size: 11px; color: var(--text3); cursor: pointer; padding: 0 2px; line-height: 1; flex-shrink: 0; opacity: 0.6; transition: opacity 0.15s; }
+.adj-row-reset:hover { opacity: 1; color: var(--accent); }
+
+/* Curves */
+.curves-wrap { position: relative; margin-bottom: 12px; }
+.curve-canvas { display: block; width: 100%; height: 220px; border-radius: 10px; border: 1px solid var(--glass-border-sub); background: rgba(20,20,30,0.85); cursor: crosshair; touch-action: none; }
+.curve-channel-btns { display: flex; gap: 6px; margin-bottom: 8px; }
+.curve-ch-btn { flex: 1; padding: 5px; font-size: 11px; font-weight: 600; border: 1px solid var(--glass-border-sub); border-radius: 8px; background: rgba(255,255,255,0.6); cursor: pointer; transition: all 0.15s; font-family: var(--font); color: var(--text2); }
+.curve-ch-btn.active { color: #fff; }
+.curve-ch-btn[data-ch="rgb"].active  { background: #555; border-color: #555; }
+.curve-ch-btn[data-ch="r"].active   { background: #e05; border-color: #e05; }
+.curve-ch-btn[data-ch="g"].active   { background: #0b5; border-color: #0b5; }
+.curve-ch-btn[data-ch="b"].active   { background: #07f; border-color: #07f; }
+.curve-reset-btn { font-size: 11px; color: var(--text3); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.curve-reset-btn:hover { color: var(--accent); }
+
+/* HSL color bubbles */
+.hsl-color-row { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+.hsl-color-btn { width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: all 0.15s; outline: none; }
+.hsl-color-btn.active { border-color: var(--text); transform: scale(1.15); }
+
+/* Tone split preview */
+.split-preview { display: flex; gap: 8px; margin-bottom: 10px; }
+.split-swatch { flex: 1; height: 28px; border-radius: 8px; border: 1px solid var(--glass-border-sub); }
+
+/* Vignette shape */
+.vig-style-row { display: flex; gap: 6px; margin-bottom: 10px; }
+.vig-style-btn { flex: 1; padding: 5px; font-size: 11px; font-weight: 600; border: 1px solid var(--glass-border-sub); border-radius: 8px; background: rgba(255,255,255,0.6); cursor: pointer; font-family: var(--font); color: var(--text2); transition: all 0.15s; }
+.vig-style-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* Reset all btn */
+.btn-adj-reset { width: 100%; padding: 9px; font-size: 12px; font-weight: 600; color: var(--text3); background: rgba(0,0,0,0.04); border: 1px solid var(--glass-border-sub); border-radius: 10px; cursor: pointer; font-family: var(--font); transition: all 0.15s; margin-top: 14px; }
+.btn-adj-reset:hover { color: var(--red); border-color: rgba(255,59,48,0.3); background: rgba(255,59,48,0.04); }
+
+/* FOOTER */
+.footer { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 4px; }
+.f-pill { font-size: 12px; color: var(--text3); background: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.7); padding: 5px 13px; border-radius: 20px; }
+
+/* TOAST */
+.toast { position: fixed; bottom: max(env(safe-area-inset-bottom,20px),20px); left: 50%; transform: translateX(-50%) translateY(80px); background: rgba(30,30,40,0.92); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); border: 1px solid rgba(255,80,80,0.35); border-radius: 16px; padding: 13px 22px; color: #ff6b6b; font-size: 14px; font-weight: 500; z-index: 999; transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1); white-space: nowrap; max-width: 90vw; text-align: center; }
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.info { border-color: rgba(0,122,255,0.35); color: var(--accent); }
+
+@media (max-width: 580px) {
+  .card { padding: 18px 14px; }
+  .drop-zone { padding: 44px 18px; }
+  .tools-row { gap: 8px; }
+  .btn-dl { min-width: 100%; }
+  .actions-row { flex-direction: column; }
+  .nav { padding: 10px 14px; }
+}
+
+/* AUTH GATE */
+.auth-gate { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; background: var(--bg); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); padding: 20px; transition: opacity 0.4s ease; }
+.auth-gate.unlocked { opacity: 0; pointer-events: none; }
+.auth-box { width: 100%; max-width: 360px; background: var(--glass); border: 1px solid var(--glass-border); border-radius: var(--r-xl); box-shadow: var(--shadow); padding: 32px 28px; text-align: center; }
+.auth-box.shake { animation: auth-shake 0.4s; }
+@keyframes auth-shake { 10%,90% { transform: translateX(-1px); } 20%,80% { transform: translateX(2px); } 30%,50%,70% { transform: translateX(-4px); } 40%,60% { transform: translateX(4px); } }
+.auth-title { font-size: 19px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; margin-bottom: 4px; }
+.auth-sub { font-size: 13px; color: var(--text3); margin-bottom: 20px; }
+.auth-input { width: 100%; padding: 12px 14px; font-size: 15px; font-family: var(--font); border: 1px solid var(--glass-border-sub); border-radius: 12px; background: rgba(255,255,255,0.7); color: var(--text); outline: none; text-align: center; letter-spacing: 2px; margin-bottom: 12px; transition: border-color 0.15s; }
+.auth-input:focus { border-color: var(--accent); }
+.auth-btn { width: 100%; padding: 12px; font-size: 14px; font-weight: 650; font-family: var(--font); color: #fff; background: var(--accent); border: none; border-radius: 50px; cursor: pointer; transition: opacity 0.15s; }
+.auth-btn:hover { opacity: 0.88; }
+.auth-error { font-size: 12px; color: var(--red); margin-top: 12px; opacity: 0; transition: opacity 0.15s; }
+.auth-error.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="auth-gate" id="auth-gate">
+  <div class="auth-box">
+    <div class="logo-mark" style="margin:0 auto 14px;">✦</div>
+    <div class="auth-title">GFXToolBox</div>
+    <div class="auth-sub">Accès restreint · entrez le code d'accès</div>
+    <input type="password" id="auth-input" class="auth-input" placeholder="Code d'accès" autocomplete="off" spellcheck="false">
+    <button class="auth-btn" id="auth-btn">Déverrouiller</button>
+    <div class="auth-error" id="auth-error">Code incorrect.</div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var STORAGE_KEY = 'gfxtoolbox_auth_ok';
+  var HASH = '1fc2c9213ec75dfd4e58c848482e6dfd08c51813605040e25ce3cf323e3abe62';
+  var gate  = document.getElementById('auth-gate');
+  var input = document.getElementById('auth-input');
+  var btn   = document.getElementById('auth-btn');
+  var err   = document.getElementById('auth-error');
+
+  if (sessionStorage.getItem(STORAGE_KEY) === '1') {
+    gate.style.display = 'none';
+    return;
+  }
+
+  async function sha256Hex(text) {
+    var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+    return Array.prototype.map.call(new Uint8Array(buf), function(b) {
+      return b.toString(16).padStart(2, '0');
+    }).join('');
+  }
+
+  async function tryUnlock() {
+    var val = input.value;
+    if (!val) return;
+    var hex = await sha256Hex(val);
+    if (hex === HASH) {
+      sessionStorage.setItem(STORAGE_KEY, '1');
+      gate.classList.add('unlocked');
+      setTimeout(function() { gate.style.display = 'none'; }, 400);
+    } else {
+      err.classList.add('show');
+      gate.querySelector('.auth-box').classList.remove('shake');
+      requestAnimationFrame(function() {
+        gate.querySelector('.auth-box').classList.add('shake');
+      });
+      input.value = '';
+      input.focus();
+    }
+  }
+
+  btn.addEventListener('click', tryUnlock);
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') tryUnlock();
+    err.classList.remove('show');
+  });
+  setTimeout(function() { input.focus(); }, 200);
+})();
+</script>
+
+<div class="wrap">
+
+  <nav class="nav">
+    <div class="logo">
+      <div class="logo-mark">✦</div>
+      <div>
+        <div>GFXToolBox</div>
+        <div class="logo-by">by Balso</div>
+      </div>
+    </div>
+    <span class="nav-pill">Suppression de fond IA + Retouches</span>
+  </nav>
+
+  <div class="card">
+
+    <!-- UPLOAD -->
+    <div id="up-section">
+      <div class="drop-zone" id="drop-zone">
+        <div class="drop-icon-wrap">↑</div>
+        <div class="drop-title">Déposez votre image ici</div>
+        <div class="drop-sub">PNG, JPG, WEBP · Glissez-déposez, collez ou cliquez<br>L'IA détecte et supprime le fond automatiquement</div>
+        <button class="btn-upload" id="choose-btn">Choisir un fichier</button>
+        <input type="file" id="file-input" accept="image/*">
+      </div>
+    </div>
+
+    <!-- PROCESSING -->
+    <div id="proc-section" class="hidden">
+      <div class="spin-ring"></div>
+      <div class="proc-title" id="proc-title">Analyse de l'image…</div>
+      <div class="proc-sub" id="proc-sub">L'IA identifie le sujet</div>
+      <div class="prog-track"><div class="prog-fill" id="prog-fill"></div></div>
+    </div>
+
+    <!-- RESULT -->
+    <div id="result-section" class="hidden">
+      <div class="res-header">
+        <div class="res-title">Résultat <span class="badge-ok">Fond supprimé</span></div>
+        <button class="btn-new" onclick="doReset()">↩&nbsp; Nouvelle image</button>
+      </div>
+
+      <div class="result-inner">
+        <!-- LEFT: preview + brush tools + actions -->
+        <div class="result-left">
+          <div class="preview-area" id="preview-area">
+            <div class="zoom-stage" id="zoom-stage">
+              <canvas id="out-canvas"></canvas>
+              <canvas id="adj-canvas"></canvas>
+              <div class="brush-overlay" id="brush-overlay"></div>
+              <div id="brush-cursor"></div>
+            </div>
+          </div>
+          <div class="preview-hint" id="preview-hint">Prévisualisation · fond transparent</div>
+
+          <div class="tools-box">
+            <div class="tools-label">Retouches manuelles</div>
+            <div class="tools-row">
+              <div class="mode-group">
+                <button class="mode-btn active" id="btn-restore" onclick="setMode('restore')">✦ Restaurer</button>
+                <button class="mode-btn erase-btn" id="btn-erase" onclick="setMode('erase')">◉ Effacer</button>
+              </div>
+              <div class="size-group">
+                <span class="size-label">Taille</span>
+                <input type="range" class="size-slider" id="brush-range" min="4" max="80" value="22">
+                <span class="size-val" id="brush-val">22</span>
+              </div>
+              <button class="btn-undo" id="btn-undo" onclick="doUndo()" disabled>↶&nbsp; Retour</button>
+              <div class="zoom-group">
+                <button class="zoom-btn" id="zoom-out" onclick="zoomBy(-1)">−</button>
+                <span class="zoom-val" id="zoom-val" title="Réinitialiser le zoom" onclick="zoomReset()">100%</span>
+                <button class="zoom-btn" id="zoom-in" onclick="zoomBy(1)">+</button>
+              </div>
+              <div class="edit-toggle-wrap" onclick="toggleEdit()">
+                <div class="tog" id="tog"><div class="tog-k"></div></div>
+                <span class="edit-label">Mode retouche</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="actions-row">
+            <button class="btn-dl" onclick="doDownload()">⬇&nbsp; Télécharger PNG</button>
+            <button class="btn-reset" onclick="doReset()">✕&nbsp; Recommencer</button>
+          </div>
+        </div>
+
+        <!-- RIGHT: Lightroom adjustments panel -->
+        <div class="result-right">
+          <div class="adj-panel">
+            <div class="adj-tabs" id="adj-tabs">
+              <button class="adj-tab active" data-pane="lumiere">Lumière</button>
+              <button class="adj-tab" data-pane="couleur">Couleur</button>
+              <button class="adj-tab" data-pane="courbes">Courbes</button>
+              <button class="adj-tab" data-pane="tsl">TSL</button>
+              <button class="adj-tab" data-pane="detail">Détail</button>
+              <button class="adj-tab" data-pane="effets">Effets</button>
+            </div>
+            <div class="adj-body">
+
+              <!-- ── LUMIÈRE ── -->
+              <div class="adj-pane active" id="pane-lumiere">
+                <div class="adj-section">
+                  <div class="adj-section-title">Exposition</div>
+                  <div class="adj-row">
+                    <span class="adj-row-label">Exposition</span>
+                    <input type="range" class="adj-row-slider" id="s-exposure" min="-100" max="100" value="0" data-def="0">
+                    <span class="adj-row-val" id="v-exposure">0</span>
+                    <span class="adj-row-reset" title="Réinitialiser" data-target="s-exposure">↺</span>
+                  </div>
+                  <div class="adj-row">
+                    <span class="adj-row-label">Contrecast</span>
+                    <input type="range" class="adj-row-slider" id="s-contrast" min="-100" max="100" value="0" data-def="0">
+                    <span class="adj-row-val" id="v-contrast">0</span>
+                    <span class="adj-row-reset" title="Réinitialiser" data-target="s-contrast">↺</span>
+                  </div>
+                </div>
+                <div class="adj-section">
+                  <div class="adj-section-title">Tons</div>
+                  <div class="adj-row">
+                    <span class="adj-row-label">Hautes lumières</span>
+                    <input type="range" class="adj-row-slider" id="s-highlights" min="-100" max="100" value="0" data-def="0">
+                    <span class="adj-row-val" id="v-highlights">0</span>
+                    <span class="adj-row-reset" data-target="s-highlights">↺</span>
+                  </div>
+                  <div class="adj-row">
+                    <span class="adj-row-label">Ombres</span>
+                    <input type="range" class="adj-row-slider" id="s-shadows" min="-100" max="100" value="0" data-def="0">
+                    <span class="adj-row-val" id="v-shadows">0</span>
+                    <span class="adj-row-reset" data-target="s-shadows">↺</span>
+                  </div>
+                  <div class="adj-row">
+                    <span class="adj-row-label">Blancs</span>
+                    <input type="range" class="adj-row-slider" id="s-whites" min="-100" max="100" value="0" data-def="0">
+                    <span class="adj-row-val" id="v-whites">0</span>
+                    <span class="adj-row-reset" data-target="s-whites">↺</span>
+                  </div>
+                  <div class="adj-row">
+                    <span class="adj-row-label">Noirs</span>
+                    <input type="range" class="adj-row-slider" id="s-blacks" min="-100" max="100" value="0" data-def="0">
+                    <span class="adj-row-val" id="v-blacks">0</span>
+                    <span class="adj-row-reset" data-target="s-blacks">↺</span>
+                  </div>
+                </div>
+                <div class="adj-section">
+                  <div class="adj-section-title">Présence</div>
+                  <div class="adj-row">
+                    <span class="adj-row-label">Texture</span>
+                    <input type="range" class="adj-row-slider" id="s-texture" min="-100" max="100" value="0" data-def="0">
+                    <span class="adj-row-val" id="v-texture">0</span>
+                    <span class="adj-row-reset" data-target="s-texture">↺</span>
+                  </div>
+                  <div class="adj-row">
+                    <span class="adj-row-label">Clarté</span>
+                    <input type="range" class="adj-row-slider" id="s-clarity" min="-100" max="100" value="0" data-def="0">
+                    <span class="adj-row-val" id="v-clarity">0</span>
+                    <span class="adj-row-reset" data-target="s-clarity">↺</span>
+                  </div>
+                  <div class="adj-row">
+                    <span class="adj-row-label">Vibrance</span>
+                    <input type="range" class="adj-row-slider" id="s-vibrance" min="-100" max="100" value="0" data-def="0">
+                    <span class="adj-row-val" id="v-vibrance">0</span>
+                    <span class="adj-row-reset" data-target="s-vibrance">↺</span>
+                  </div>
+                  <div class="adj-row">
+                    <span class="adj-row-label">Saturation</span>
+                    <input type="range" class="adj-row-slider" id="s-saturation" min="-100" max="100" value="0" data-def="0">
+                    <span class="adj-row-val" id="v-saturation">0</span>
+                    <span class="adj-row-reset" data-target="s-saturation">↺</span>
+                  </div>
+                </div>
+                <button class="btn-adj-reset" onclick="resetAllAdj()">↺ Tout réinitialiser</button>
+              </div>
+
+              <!-- ── COULEUR ── -->
+              <div class="adj-pane" id="pane-couleur">
+                <div class="adj-section">
+                  <div class="adj-section-title">Balance des blancs</div>
+                  <div class="adj-row">
+                    <span class="adj-row-label">Température</span>
+                    <input type="range" class="adj-row-slider" id="s-temp" min="-100" max="100" value="0" data-def="0">
+                    <span class="adj-row-val" id="v-temp">0</span>
+                    <span class="adj-row-reset" data-target="s-temp">↺</span>
+                  </div>
+                  <div class="adj-row">
+                    <span class="adj-row-label">Teinte</span>
+                    <input type="range" class="adj-row-slider" id="s-tint" min="-100" max="100" value="0" data-def="0">
+                    <span class="adj-row-val" id="v-tint">0</span>
+                    <span class="adj-row-reset" data-target="s-tint">↺</span>
+                  </div>
+                </div>
+                <div class="adj-section">
+                  <div class="adj-section-title">Canaux RVB</div>
+                  <div class="adj-row">
+                    <span class="adj-row-label" style="color:#e05050">Rouge</span>
+                    <input type="range" class="adj-row-slider" id="s-red" min="-100" max="100" value="0" data-def="0" style="--accent:#e05050">
+                    <span class="adj-row-val" id="v-red">0</span>
+                    <span class="adj-row-reset" data-target="s-red">↺</span>
+                  </div>
+                  <div class="adj-row">
+                    <span class="adj-row-label" style="color:#0a9a3c">Vert</span>
+                    <input type="range" class="adj-row-slider" id="s-green" min="-100" max="100" value="0" data-def="0" style="--accent:#0a9a3c">
+                    <span class="adj-row-val" id="v-green">0</span>
+                    <span class="adj-row-reset" data-target="s-green">↺</span>
+                  </div>
+                  <div class="adj-row">
+                    <span class="adj-row-label" style="color:#0077ff">Bleu</span>
+                    <input type="range" class="adj-row-slider" id="s-blue" min="-100" max="100" value="0" data-def="0" style="--accent:#0077ff">
+                    <span class="adj-row-val" id="v-blue">0</span>
+                    <span class="adj-row-reset" data-target="s-blue">↺</span>
+                  </div>
+                </div>
+                <button class="btn-adj-reset" onclick="resetAllAdj()">↺ Tout réinitialiser</button>
+              </div>
+
+              <!-- ── COURBES ── -->
+              <div class="adj-pane" id="pane-courbes">
+                <div class="adj-section">
+                  <div class="adj-section-title">Courbe de tonalité</div>
+                  <div class="curve-channel-btns">
+                    <button class="curve-ch-btn active" data-ch="rgb">RVB</button>
+                    <button class="curve-ch-btn" data-ch="r">R</button>
+                    <button class="curve-ch-btn" data-ch="g">V</button>
+                    <button class="curve-ch-btn" data-ch="b">B</button>
+                  </div>
+                  <div class="curves-wrap">
+                    <canvas class="curve-canvas" id="curve-canvas" width="400" height="240"></canvas>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:11px;color:var(--text3)">Touchez puis glissez pour créer et ajuster vos points</span>
+                    <span class="curve-reset-btn" id="curve-reset-btn">Réinitialiser</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ── TSL / Couleur ── -->
+              <div class="adj-pane" id="pane-tsl">
+                <div class="adj-section">
+                  <div class="adj-section-title">Teinte / Saturation / Luminosité par couleur</div>
+                  <div class="hsl-color-row" id="hsl-color-row">
+                    <button class="hsl-color-btn active" data-hsl="all" style="background:linear-gradient(135deg,red,orange,yellow,green,blue,violet);border-color:var(--text)" title="Toutes"></button>
+                    <button class="hsl-color-btn" data-hsl="red"    style="background:#e03030" title="Rouge"></button>
+                    <button class="hsl-color-btn" data-hsl="orange" style="background:#e07020" title="Orange"></button>
+                    <button class="hsl-color-btn" data-hsl="yellow" style="background:#d4c000" title="Jaune"></button>
+                    <button class="hsl-color-btn" data-hsl="green"  style="background:#0a9a3c" title="Vert"></button>
+                    <button class="hsl-color-btn" data-hsl="aqua"   style="background:#00a0b0" title="Aqua"></button>
+                    <button class="hsl-color-btn" data-hsl="blue"   style="background:#0066cc" title="Bleu"></button>
+                    <button class="hsl-color-btn" data-hsl="purple" style="background:#8833bb" title="Violet"></button>
+                    <button class="hsl-color-btn" data-hsl="magenta" style="background:#cc2288" title="Magenta"></button>
+                  </div>
+                  <div id="hsl-sliders">
+                    <div class="adj-row">
+                      <span class="adj-row-label">Teinte</span>
+                      <input type="range" class="adj-row-slider" id="s-hsl-h" min="-100" max="100" value="0" data-def="0">
+                      <span class="adj-row-val" id="v-hsl-h">0</span>
+                      <span class="adj-row-reset" data-target="s-hsl-h">↺</span>
+                    </div>
+                    <div class="adj-row">
+                      <span class="adj-row-label">Saturation</span>
+                      <input type="range" class="adj-row-slider" id="s-hsl-s" min="-100" max="100" value="0" data-def="0">
+                      <span class="adj-row-val" id="v-hsl-s">0</span>
+                      <span class="adj-row-reset" data-target="s-hsl-s">↺</span>
+                    </div>
+                    <div class="adj-row">
+                      <span class="adj-row-label">Luminosité</span>
+                      <input type="range" class="adj-row-slider" id="s-hsl-l" min="-100" max="100" value="0" data-def="0">
+                      <span class="adj-row-val" id="v-hsl-l">0</span>
+                      <span class="adj-row-reset" data-target="s-hsl-l">↺</span>
+                    </div>
+                  </div>
+                </div>
+                <button class="btn-adj-reset" onclick="resetAllAdj()">↺ Tout réinitialiser</button>
+              </div>
+
+              <!-- ── DÉTAIL ── -->
+              <div class="adj-pane" id="pane-detail">
+                <div class="adj-section">
+                  <div class="adj-section-title">Netteté</div>
+                  <div class="adj-row">
+                    <span class="adj-row-label">Netteté</span>
+                    <input type="range" class="adj-row-slider" id="s-sharpness" min="0" max="100" value="0" data-def="0">
+                    <span class="adj-row-val" id="v-sharpness">0</span>
+                    <span class="adj-row-reset" data-target="s-sharpness">↺</span>
+                  </div>
+                  <div class="adj-row">
+                    <span class="adj-row-label">Rayon</span>
+                    <input type="range" class="adj-row-slider" id="s-sharp-radius" min="1" max="30" value="8" data-def="8">
+                    <span class="adj-row-val" id="v-sharp-radius">8</span>
+                    <span class="adj-row-reset" data-target="s-sharp-radius">↺</span>
+                  </div>
+                </div>
+                <div class="adj-section">
+                  <div class="adj-section-title">Réduction du bruit</div>
+                  <div class="adj-row">
+                    <span class="adj-row-label">Luminance</span>
+                    <input type="range" class="adj-row-slider" id="s-nr-lum" min="0" max="100" value="0" data-def="0">
+                    <span class="adj-row-val" id="v-nr-lum">0</span>
+                    <span class="adj-row-reset" data-target="s-nr-lum">↺</span>
+                  </div>
+                  <div class="adj-row">
+                    <span class="adj-row-label">Couleur</span>
+                    <input type="range" class="adj-row-slider" id="s-nr-col" min="0" max="100" value="0" data-def="0">
+                    <span class="adj-row-val" id="v-nr-col">0</span>
+                    <span class="adj-row-reset" data-target="s-nr-col">↺</span>
+                  </div>
+                </div>
+                <button class="btn-adj-reset" onclick="resetAllAdj()">↺ Tout réinitialiser</button>
+              </div>
+
+              <!-- ── EFFETS ── -->
+              <div class="adj-pane" id="pane-effets">
+                <div class="adj-section">
+                  <div class="adj-section-title">Vignettage</div>
+                  <div class="adj-row">
+                    <span class="adj-row-label">Intensité</span>
+                    <input type="range" class="adj-row-slider" id="s-vig-amount" min="-100" max="100" value="0" data-def="0">
+                    <span class="adj-row-val" id="v-vig-amount">0</span>
+                    <span class="adj-row-reset" data-target="s-vig-amount">↺</span>
+                  </div>
+                  <div class="adj-row">
+                    <span class="adj-row-label">Milieu</span>
+                    <input type="range" class="adj-row-slider" id="s-vig-mid" min="0" max="100" value="50" data-def="50">
+                    <span class="adj-row-val" id="v-vig-mid">50</span>
+                    <span class="adj-row-reset" data-target="s-vig-mid">↺</span>
+                  </div>
+                  <div class="adj-row">
+                    <span class="adj-row-label">Douceur</span>
+                    <input type="range" class="adj-row-slider" id="s-vig-feather" min="0" max="100" value="70" data-def="70">
+                    <span class="adj-row-val" id="v-vig-feather">70</span>
+                    <span class="adj-row-reset" data-target="s-vig-feather">↺</span>
+                  </div>
+                  <div class="adj-row">
+                    <span class="adj-row-label">Arrondi</span>
+                    <input type="range" class="adj-row-slider" id="s-vig-round" min="0" max="100" value="50" data-def="50">
+                    <span class="adj-row-val" id="v-vig-round">50</span>
+                    <span class="adj-row-reset" data-target="s-vig-round">↺</span>
+                  </div>
+                </div>
+                <div class="adj-section">
+                  <div class="adj-section-title">Grain</div>
+                  <div class="adj-row">
+                    <span class="adj-row-label">Intensité</span>
+                    <input type="range" class="adj-row-slider" id="s-grain" min="0" max="100" value="0" data-def="0">
+                    <span class="adj-row-val" id="v-grain">0</span>
+                    <span class="adj-row-reset" data-target="s-grain">↺</span>
+                  </div>
+                  <div class="adj-row">
+                    <span class="adj-row-label">Taille</span>
+                    <input type="range" class="adj-row-slider" id="s-grain-size" min="1" max="50" value="10" data-def="10">
+                    <span class="adj-row-val" id="v-grain-size">10</span>
+                    <span class="adj-row-reset" data-target="s-grain-size">↺</span>
+                  </div>
+                </div>
+                <div class="adj-section">
+                  <div class="adj-section-title">Séparation des tons</div>
+                  <div class="split-preview">
+                    <div class="split-swatch" id="swatch-hl" title="Hautes lumières"></div>
+                    <div class="split-swatch" id="swatch-sh" title="Ombres"></div>
+                  </div>
+                  <div class="adj-row">
+                    <span class="adj-row-label">Teinte HL</span>
+                    <input type="range" class="adj-row-slider" id="s-split-hl-h" min="0" max="360" value="0" data-def="0">
+                    <span class="adj-row-val" id="v-split-hl-h">0°</span>
+                    <span class="adj-row-reset" data-target="s-split-hl-h">↺</span>
+                  </div>
+                  <div class="adj-row">
+                    <span class="adj-row-label">Sat. HL</span>
+                    <input type="range" class="adj-row-slider" id="s-split-hl-s" min="0" max="100" value="0" data-def="0">
+                    <span class="adj-row-val" id="v-split-hl-s">0</span>
+                    <span class="adj-row-reset" data-target="s-split-hl-s">↺</span>
+                  </div>
+                  <div class="adj-row">
+                    <span class="adj-row-label">Teinte Ombres</span>
+                    <input type="range" class="adj-row-slider" id="s-split-sh-h" min="0" max="360" value="210" data-def="210">
+                    <span class="adj-row-val" id="v-split-sh-h">210°</span>
+                    <span class="adj-row-reset" data-target="s-split-sh-h">↺</span>
+                  </div>
+                  <div class="adj-row">
+                    <span class="adj-row-label">Sat. Ombres</span>
+                    <input type="range" class="adj-row-slider" id="s-split-sh-s" min="0" max="100" value="0" data-def="0">
+                    <span class="adj-row-val" id="v-split-sh-s">0</span>
+                    <span class="adj-row-reset" data-target="s-split-sh-s">↺</span>
+                  </div>
+                  <div class="adj-row">
+                    <span class="adj-row-label">Balance</span>
+                    <input type="range" class="adj-row-slider" id="s-split-bal" min="-100" max="100" value="0" data-def="0">
+                    <span class="adj-row-val" id="v-split-bal">0</span>
+                    <span class="adj-row-reset" data-target="s-split-bal">↺</span>
+                  </div>
+                </div>
+                <button class="btn-adj-reset" onclick="resetAllAdj()">↺ Tout réinitialiser</button>
+              </div>
+
+            </div><!-- /adj-body -->
+          </div><!-- /adj-panel -->
+        </div><!-- /result-right -->
+      </div><!-- /result-inner -->
+    </div><!-- /result-section -->
+
+  </div><!-- /card -->
+
+  <div class="footer">
+    <span class="f-pill">IA locale (navigateur)</span>
+    <span class="f-pill">✦ Qualité originale</span>
+    <span class="f-pill">Export PNG transparent</span>
+    <span class="f-pill">Retouches style Lightroom</span>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function() {
+  /* ══ DOM refs ══ */
+  var fileInput    = document.getElementById('file-input');
+  var chooseBtn    = document.getElementById('choose-btn');
+  var dropZone     = document.getElementById('drop-zone');
+  var upSection    = document.getElementById('up-section');
+  var procSection  = document.getElementById('proc-section');
+  var resultSec    = document.getElementById('result-section');
+  var procTitle    = document.getElementById('proc-title');
+  var procSub      = document.getElementById('proc-sub');
+  var progFill     = document.getElementById('prog-fill');
+  var outCanvas    = document.getElementById('out-canvas');
+  var adjCanvas    = document.getElementById('adj-canvas');
+  var previewArea  = document.getElementById('preview-area');
+  var zoomStage    = document.getElementById('zoom-stage');
+  var brushOverlay = document.getElementById('brush-overlay');
+  var brushCursor  = document.getElementById('brush-cursor');
+  var brushRange   = document.getElementById('brush-range');
+  var brushVal     = document.getElementById('brush-val');
+  var btnUndo      = document.getElementById('btn-undo');
+  var zoomVal      = document.getElementById('zoom-val');
+  var tog          = document.getElementById('tog');
+  var previewHint  = document.getElementById('preview-hint');
+
+  var origDataURL  = '';
+  var origFileName = 'image';
+  var brushSize    = 22;
+  var currentMode  = 'restore';
+  var editOn       = false;
+  var painting     = false;
+
+  /* ── zoom ── */
+  var ZOOM_STEP = 0.5, ZOOM_MIN = 1, ZOOM_MAX = 4;
+  var zoomLevel = 1;
+  var zoomBaseW = 0, zoomBaseH = 0;
+  window.zoomBy = function(dir) {
+    if (!zoomBaseW) {
+      var r = outCanvas.getBoundingClientRect();
+      zoomBaseW = r.width; zoomBaseH = r.height;
+    }
+    zoomLevel = clamp(zoomLevel + dir * ZOOM_STEP, ZOOM_MIN, ZOOM_MAX);
+    applyZoom();
+  };
+  window.zoomReset = function() {
+    zoomLevel = 1;
+    applyZoom();
+  };
+  function applyZoom() {
+    zoomVal.textContent = Math.round(zoomLevel * 100) + '%';
+    document.getElementById('zoom-out').disabled = zoomLevel <= ZOOM_MIN;
+    document.getElementById('zoom-in').disabled = zoomLevel >= ZOOM_MAX;
+    if (zoomLevel === 1 || !zoomBaseW) {
+      zoomStage.classList.remove('zoomed');
+      outCanvas.style.width = '';
+      outCanvas.style.height = '';
+      outCanvas.style.maxWidth = '';
+      outCanvas.style.maxHeight = '';
+      brushCursor.style.display = 'none';
+    } else {
+      zoomStage.classList.add('zoomed');
+      outCanvas.style.maxWidth = 'none';
+      outCanvas.style.maxHeight = 'none';
+      outCanvas.style.width  = (zoomBaseW * zoomLevel) + 'px';
+      outCanvas.style.height = (zoomBaseH * zoomLevel) + 'px';
+    }
+  }
+  function resetZoom() {
+    zoomLevel = 1; zoomBaseW = 0; zoomBaseH = 0;
+    zoomStage.classList.remove('zoomed');
+    outCanvas.style.width = '';
+    outCanvas.style.height = '';
+    outCanvas.style.maxWidth = '';
+    outCanvas.style.maxHeight = '';
+    zoomVal.textContent = '100%';
+    document.getElementById('zoom-out').disabled = true;
+    document.getElementById('zoom-in').disabled = false;
+  }
+
+  /* ── retour général (réglages, courbes et retouches au pinceau) ── */
+  var undoStack = [];
+  function snapshotSettings() {
+    var sliders = {};
+    document.querySelectorAll('.adj-row-slider').forEach(function(el) { sliders[el.id] = el.value; });
+    return {
+      type: 'settings',
+      sliders: sliders,
+      curves: JSON.parse(JSON.stringify(curves)),
+      hslValues: JSON.parse(JSON.stringify(hslValues)),
+      hslKey: currentHslKey
+    };
+  }
+  function pushUndoSnapshot(type) {
+    if (type === 'brush') {
+      var ctx = outCanvas.getContext('2d', { willReadFrequently: true });
+      undoStack.push({ type: 'brush', pixels: ctx.getImageData(0, 0, outCanvas.width, outCanvas.height) });
+    } else {
+      undoStack.push(snapshotSettings());
+    }
+    if (undoStack.length > 30) undoStack.shift();
+    btnUndo.disabled = false;
+  }
+  window.doUndo = function() {
+    if (!undoStack.length) return;
+    var snap = undoStack.pop();
+    if (snap.type === 'brush') {
+      var ctx = outCanvas.getContext('2d', { willReadFrequently: true });
+      ctx.putImageData(snap.pixels, 0, 0);
+    } else {
+      Object.keys(snap.sliders).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.value = snap.sliders[id];
+      });
+      curves = snap.curves;
+      hslValues = snap.hslValues;
+      currentHslKey = snap.hslKey;
+      document.querySelectorAll('.hsl-color-btn').forEach(function(b) {
+        b.classList.toggle('active', b.getAttribute('data-hsl') === currentHslKey);
+      });
+      updateSliderTracks();
+      drawCurve();
+      scheduleAdj();
+    }
+    btnUndo.disabled = undoStack.length === 0;
+  };
+  function resetUndo() {
+    undoStack = [];
+    btnUndo.disabled = true;
+  }
+
+  /* ── upload triggers ── */
+  chooseBtn.addEventListener('click', function(e) { e.stopPropagation(); fileInput.click(); });
+  dropZone.addEventListener('click', function() { fileInput.click(); });
+  fileInput.addEventListener('change', function() {
+    if (fileInput.files && fileInput.files[0]) processFile(fileInput.files[0]);
+  });
+  dropZone.addEventListener('dragover', function(e) { e.preventDefault(); dropZone.classList.add('over'); });
+  dropZone.addEventListener('dragleave', function() { dropZone.classList.remove('over'); });
+  dropZone.addEventListener('drop', function(e) {
+    e.preventDefault(); dropZone.classList.remove('over');
+    var f = e.dataTransfer.files[0];
+    if (f && f.type.match(/^image\//)) processFile(f);
+    else showToast('Format non supporté.');
+  });
+  document.addEventListener('paste', function(e) {
+    var items = e.clipboardData && e.clipboardData.items;
+    if (!items) return;
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].type.match(/^image\//)) { processFile(items[i].getAsFile()); break; }
+    }
+  });
+
+  /* ── brush ── */
+  brushRange.addEventListener('input', function() {
+    brushSize = parseInt(this.value);
+    brushVal.textContent = brushSize;
+    updateCursorSize();
+  });
+  function updateCursorSize() {
+    brushCursor.style.width  = (brushSize * 2) + 'px';
+    brushCursor.style.height = (brushSize * 2) + 'px';
+  }
+  window.setMode = function(m) {
+    currentMode = m;
+    document.getElementById('btn-restore').classList.toggle('active', m === 'restore');
+    document.getElementById('btn-erase').classList.toggle('active', m === 'erase');
+    brushCursor.style.borderColor = m === 'erase' ? 'rgba(255,59,48,0.7)' : 'rgba(0,122,255,0.7)';
+    brushCursor.style.background  = m === 'erase' ? 'rgba(255,59,48,0.08)' : 'rgba(0,122,255,0.08)';
+  };
+  window.toggleEdit = function() {
+    editOn = !editOn;
+    tog.classList.toggle('on', editOn);
+    brushOverlay.classList.toggle('active', editOn);
+    brushCursor.style.display = 'none';
+    previewHint.textContent = editOn
+      ? 'Peignez · le pinceau détecte automatiquement les zones similaires'
+      : 'Prévisualisation · fond transparent';
+  };
+
+  /* ── section switch ── */
+  function show(id) {
+    upSection.classList.toggle('hidden', id !== 'up');
+    procSection.classList.toggle('hidden', id !== 'proc');
+    resultSec.classList.toggle('hidden', id !== 'result');
+  }
+
+  /* ── progress ── */
+  function startProgress() {
+    progFill.style.width = '0%';
+    procTitle.textContent = 'Chargement de l\'image…';
+    procSub.textContent = 'Préparation';
+  }
+  function stopProgress() { progFill.style.width = '100%'; }
+
+  /* ── MAIN ── */
+  function processFile(file) {
+    if (file.size > 20 * 1024 * 1024) { showToast('Fichier trop volumineux (max 20 Mo).'); return; }
+    origFileName = file.name.replace(/\.[^.]+$/, '') || 'image';
+    show('proc'); startProgress();
+    var reader = new FileReader();
+    reader.onload = function(e) { origDataURL = e.target.result; runAISegmentation(origDataURL); };
+    reader.onerror = function() { showToast('Erreur de lecture.'); show('up'); };
+    reader.readAsDataURL(file);
+  }
+
+  /* ── AI Segmentation ── */
+  var segmenterPromise = null;
+  function getSegmenter() {
+    if (segmenterPromise) return segmenterPromise;
+    segmenterPromise = import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.0')
+      .then(function(mod) {
+        mod.env.allowLocalModels = false;
+        return mod.pipeline('background-removal', 'briaai/RMBG-1.4', {
+          progress_callback: function(p) {
+            if (p && p.status === 'progress' && p.total) {
+              var pct = 15 + Math.round((p.loaded / p.total) * 60);
+              progFill.style.width = Math.min(pct, 75) + '%';
+              procSub.textContent = 'Téléchargement du modèle… ' + Math.round((p.loaded / p.total) * 100) + '%';
+            }
+          }
+        });
+      });
+    return segmenterPromise;
+  }
+
+  function runAISegmentation(dataURL) {
+    procTitle.textContent = "Chargement du modèle…";
+    procSub.textContent = "Téléchargement du modèle IA (premier lancement uniquement)";
+    progFill.style.width = '15%';
+    getSegmenter()
+      .then(function(segmenter) {
+        progFill.style.width = '78%';
+        procTitle.textContent = "Analyse de l'image…";
+        procSub.textContent = "Détection du sujet et suppression du fond";
+        return segmenter(dataURL);
+      })
+      .then(function(output) {
+        progFill.style.width = '95%';
+        var result = Array.isArray(output) ? output[0] : output;
+        var resultImg = result && (result.images ? result.images[0] : result);
+        return resultImg.toCanvas ? resultImg.toCanvas() : resultImg;
+      })
+      .then(function(canvasOrResult) {
+        var W, H, drawSrc;
+        if (canvasOrResult instanceof HTMLCanvasElement || canvasOrResult instanceof OffscreenCanvas) {
+          W = canvasOrResult.width; H = canvasOrResult.height; drawSrc = canvasOrResult;
+        } else {
+          W = canvasOrResult.width; H = canvasOrResult.height;
+          var tmpCanvas = document.createElement('canvas');
+          tmpCanvas.width = W; tmpCanvas.height = H;
+          var tctx = tmpCanvas.getContext('2d');
+          var imgData = tctx.createImageData(W, H);
+          var src = canvasOrResult.data;
+          var ch = canvasOrResult.channels || 4;
+          for (var i = 0, j = 0; i < W * H; i++, j += ch) {
+            imgData.data[i*4]   = src[j];
+            imgData.data[i*4+1] = src[j + (ch > 1 ? 1 : 0)];
+            imgData.data[i*4+2] = src[j + (ch > 2 ? 2 : 0)];
+            imgData.data[i*4+3] = ch === 4 ? src[j+3] : 255;
+          }
+          tctx.putImageData(imgData, 0, 0);
+          drawSrc = tmpCanvas;
+        }
+        stopProgress();
+        outCanvas.width = W; outCanvas.height = H;
+        var ctx = outCanvas.getContext('2d');
+        ctx.clearRect(0, 0, W, H);
+        ctx.drawImage(drawSrc, 0, 0, W, H);
+        /* store base image for adjustments */
+        adjCanvas.width = W; adjCanvas.height = H;
+        adjCanvas.getContext('2d').drawImage(drawSrc, 0, 0, W, H);
+        show('result');
+        resetUndo();
+        resetZoom();
+        prepareOrigCanvas(W, H).then(function() { setupBrush(); initCurves(); });
+      })
+      .catch(function(err) {
+        console.error('Background removal error:', err);
+        showToast('Erreur IA : ' + (err.message || 'inconnue') + '. Réessayez.');
+        stopProgress(); show('up');
+      });
+  }
+
+  /* ── Brush painting ── */
+  var origImgCanvas = null;
+  var origImgCtx    = null;
+  function prepareOrigCanvas(W, H) {
+    return new Promise(function(resolve) {
+      var img = new Image();
+      img.onload = function() {
+        origImgCanvas = document.createElement('canvas');
+        origImgCanvas.width = W; origImgCanvas.height = H;
+        origImgCtx = origImgCanvas.getContext('2d', { willReadFrequently: true });
+        origImgCtx.drawImage(img, 0, 0, W, H);
+        resolve();
+      };
+      img.src = origDataURL;
+    });
+  }
+
+  var brushListenersAttached = false;
+  function setupBrush() {
+    updateCursorSize();
+    var outCtx = outCanvas.getContext('2d', { willReadFrequently: true });
+    function getPos(e) {
+      var r = outCanvas.getBoundingClientRect();
+      var scaleX = outCanvas.width / r.width;
+      var scaleY = outCanvas.height / r.height;
+      var cx = e.touches ? e.touches[0].clientX : e.clientX;
+      var cy = e.touches ? e.touches[0].clientY : e.clientY;
+      return { x: (cx - r.left) * scaleX, y: (cy - r.top) * scaleY };
+    }
+    function moveCursor(e) {
+      if (!editOn) return;
+      var r = outCanvas.getBoundingClientRect();
+      var cx = e.touches ? e.touches[0].clientX : e.clientX;
+      var cy = e.touches ? e.touches[0].clientY : e.clientY;
+      brushCursor.style.display = 'block';
+      brushCursor.style.left = (cx - r.left) + 'px';
+      brushCursor.style.top  = (cy - r.top)  + 'px';
+    }
+    function doPaint(e) {
+      if (!editOn || !painting || !origImgCtx) return;
+      var pos = getPos(e);
+      var W = outCanvas.width, H = outCanvas.height;
+      var r = brushSize;
+      var x0 = Math.max(0, Math.floor(pos.x - r));
+      var y0 = Math.max(0, Math.floor(pos.y - r));
+      var x1 = Math.min(W, Math.ceil(pos.x + r));
+      var y1 = Math.min(H, Math.ceil(pos.y + r));
+      var bw = x1 - x0, bh = y1 - y0;
+      if (bw <= 0 || bh <= 0) return;
+      var sx = Math.max(0, Math.min(W - 1, Math.round(pos.x)));
+      var sy = Math.max(0, Math.min(H - 1, Math.round(pos.y)));
+      var seed = origImgCtx.getImageData(sx, sy, 1, 1).data;
+      var origData = origImgCtx.getImageData(x0, y0, bw, bh);
+      var outData  = outCtx.getImageData(x0, y0, bw, bh);
+      var od = origData.data, cd = outData.data;
+      var tolerance = 30 + brushSize * 1.2;
+      for (var py = 0; py < bh; py++) {
+        for (var px = 0; px < bw; px++) {
+          var gx = x0 + px, gy = y0 + py;
+          var dx = gx - pos.x, dy = gy - pos.y;
+          var dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist > r) continue;
+          var idx = (py * bw + px) * 4;
+          var dr = od[idx]   - seed[0];
+          var dg = od[idx+1] - seed[1];
+          var db = od[idx+2] - seed[2];
+          var colorDist = Math.sqrt(dr*dr + dg*dg + db*db);
+          var colorFactor  = colorDist <= tolerance ? 1 : Math.max(0, 1 - (colorDist - tolerance) / tolerance);
+          var radialFactor = 1 - (dist / r) * 0.5;
+          var strength = colorFactor * radialFactor;
+          if (strength <= 0.02) continue;
+          if (currentMode === 'erase') {
+            cd[idx+3] = Math.round(cd[idx+3] * (1 - strength));
+          } else {
+            cd[idx]   = Math.round(cd[idx]   * (1 - strength) + od[idx]   * strength);
+            cd[idx+1] = Math.round(cd[idx+1] * (1 - strength) + od[idx+1] * strength);
+            cd[idx+2] = Math.round(cd[idx+2] * (1 - strength) + od[idx+2] * strength);
+            cd[idx+3] = Math.round(cd[idx+3] * (1 - strength) + 255 * strength);
+          }
+        }
+      }
+      outCtx.putImageData(outData, x0, y0);
+    }
+    if (brushListenersAttached) return;
+    brushListenersAttached = true;
+    brushOverlay.addEventListener('mousemove', function(e) { moveCursor(e); doPaint(e); });
+    brushOverlay.addEventListener('mouseleave', function() { brushCursor.style.display = 'none'; painting = false; });
+    brushOverlay.addEventListener('mousedown', function(e) { pushUndoSnapshot('brush'); painting = true; doPaint(e); });
+    brushOverlay.addEventListener('mouseup', function() { painting = false; });
+    brushOverlay.addEventListener('touchstart', function(e) { pushUndoSnapshot('brush'); painting = true; moveCursor(e); doPaint(e); }, {passive:true});
+    brushOverlay.addEventListener('touchmove', function(e) { e.preventDefault(); moveCursor(e); doPaint(e); }, {passive:false});
+    brushOverlay.addEventListener('touchend', function() { painting = false; });
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     SYSTÈME DE RETOUCHE — style Lightroom
+     Toutes les opérations se font sur adjCanvas (RGBA)
+     puis sont copiées vers outCanvas pour l'affichage.
+  ══════════════════════════════════════════════════════════ */
+
+  /* Clamp helper */
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  /* ── Lecture des sliders ── */
+  function sv(id) { return parseFloat(document.getElementById(id).value); }
+
+  /* ── Conversion RGB ↔ HSL ── */
+  function rgbToHsl(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    var max = Math.max(r, g, b), min = Math.min(r, g, b);
+    var h, s, l = (max + min) / 2;
+    if (max === min) { h = s = 0; }
+    else {
+      var d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+      else if (max === g) h = ((b - r) / d + 2) / 6;
+      else h = ((r - g) / d + 4) / 6;
+    }
+    return [h * 360, s, l];
+  }
+  function hslToRgb(h, s, l) {
+    h /= 360;
+    var r, g, b;
+    if (s === 0) { r = g = b = l; }
+    else {
+      function hue2rgb(p, q, t) {
+        if (t < 0) t += 1; if (t > 1) t -= 1;
+        if (t < 1/6) return p + (q - p) * 6 * t;
+        if (t < 1/2) return q;
+        if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+        return p;
+      }
+      var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+      var p = 2 * l - q;
+      r = hue2rgb(p, q, h + 1/3);
+      g = hue2rgb(p, q, h);
+      b = hue2rgb(p, q, h - 1/3);
+    }
+    return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+  }
+
+  /* ── HSL range mask (pour TSL par couleur) ── */
+  var HSL_RANGES = {
+    all:     null,
+    red:     [[330, 30]],
+    orange:  [[20, 50]],
+    yellow:  [[45, 75]],
+    green:   [[70, 160]],
+    aqua:    [[155, 210]],
+    blue:    [[200, 255]],
+    purple:  [[250, 310]],
+    magenta: [[300, 340]]
+  };
+  function inHueRange(h, ranges) {
+    if (!ranges) return 1.0;
+    for (var i = 0; i < ranges.length; i++) {
+      var lo = ranges[i][0], hi = ranges[i][1];
+      var center = (lo + hi) / 2;
+      var spread = (hi - lo) / 2;
+      var diff = Math.abs(((h - center + 180 + 360) % 360) - 180);
+      if (diff <= spread) return 1.0;
+      if (diff <= spread * 2) return 1.0 - (diff - spread) / spread;
+    }
+    return 0;
+  }
+
+  /* ── Courbes (Look Up Table) ── */
+  var curves = {
+    rgb: null, r: null, g: null, b: null
+  };
+  function curveValueAt(points, t) {
+    /* points: tableau trié de {x, y} dans [0,1] — spline de Catmull-Rom */
+    var n = points.length;
+    if (t <= points[0].x) return points[0].y;
+    if (t >= points[n-1].x) return points[n-1].y;
+    if (n === 2) {
+      var u0 = (t - points[0].x) / (points[1].x - points[0].x);
+      return points[0].y + (points[1].y - points[0].y) * u0;
+    }
+    var i = 0;
+    for (; i < n - 1; i++) {
+      if (t <= points[i+1].x) break;
+    }
+    var p0 = points[i === 0 ? 0 : i-1];
+    var p1 = points[i];
+    var p2 = points[i+1];
+    var p3 = points[i+2 < n ? i+2 : n-1];
+    var x1 = p1.x, x2 = p2.x;
+    var u  = x2 > x1 ? (t - x1) / (x2 - x1) : 0;
+    var u2 = u*u, u3 = u2*u;
+    var y0=p0.y, y1=p1.y, y2=p2.y, y3=p3.y;
+    return 0.5 * ( (2*y1) + (-y0+y2)*u + (2*y0-5*y1+4*y2-y3)*u2 + (-y0+3*y1-3*y2+y3)*u3 );
+  }
+  function buildCurveLUT(points) {
+    /* points: sorted array of {x, y} in [0,1] */
+    var lut = new Uint8Array(256);
+    if (!points || points.length < 2) {
+      for (var i = 0; i < 256; i++) lut[i] = i;
+      return lut;
+    }
+    for (var px = 0; px < 256; px++) {
+      var t = px / 255;
+      var val = curveValueAt(points, t);
+      lut[px] = clamp(Math.round(val * 255), 0, 255);
+    }
+    return lut;
+  }
+  function defaultCurvePts() {
+    return [{x:0,y:0},{x:1,y:1}];
+  }
+  function resetCurvesDefault() {
+    curves.rgb = defaultCurvePts();
+    curves.r   = defaultCurvePts();
+    curves.g   = defaultCurvePts();
+    curves.b   = defaultCurvePts();
+  }
+  resetCurvesDefault();
+
+  /* ── Appliquer tous les réglages sur adjCanvas → outCanvas ── */
+  var adjPending = false;
+  var adjRAF = null;
+  function scheduleAdj() {
+    if (adjRAF) cancelAnimationFrame(adjRAF);
+    adjRAF = requestAnimationFrame(applyAdjustments);
+  }
+
+  function applyAdjustments() {
+    adjRAF = null;
+    if (!adjCanvas.width) return;
+
+    var W = adjCanvas.width, H = adjCanvas.height;
+    var srcCtx = adjCanvas.getContext('2d', { willReadFrequently: true });
+    var srcData = srcCtx.getImageData(0, 0, W, H);
+    var d = srcData.data;
+
+    /* Read all values */
+    var exposure    = sv('s-exposure')    / 100;
+    var contrast    = sv('s-contrast')    / 100;
+    var highlights  = sv('s-highlights')  / 100;
+    var shadows     = sv('s-shadows')     / 100;
+    var whites      = sv('s-whites')      / 100;
+    var blacks      = sv('s-blacks')      / 100;
+    var texture     = sv('s-texture')     / 100;
+    var clarity     = sv('s-clarity')     / 100;
+    var vibrance    = sv('s-vibrance')    / 100;
+    var saturation  = sv('s-saturation')  / 100;
+    var temp        = sv('s-temp')        / 100;
+    var tint        = sv('s-tint')        / 100;
+    var redCh       = sv('s-red')         / 100;
+    var greenCh     = sv('s-green')       / 100;
+    var blueCh      = sv('s-blue')        / 100;
+
+    var hslKey      = currentHslKey;
+    var hslH        = sv('s-hsl-h');
+    var hslS        = sv('s-hsl-s') / 100;
+    var hslL        = sv('s-hsl-l') / 100;
+
+    var sharpness   = sv('s-sharpness')   / 100;
+    var sharpRadius = sv('s-sharp-radius');
+    var nrLum       = sv('s-nr-lum')      / 100;
+
+    var vigAmount   = sv('s-vig-amount')  / 100;
+    var vigMid      = sv('s-vig-mid')     / 100;
+    var vigFeather  = sv('s-vig-feather') / 100;
+    var vigRound    = sv('s-vig-round')   / 100;
+
+    var grain       = sv('s-grain')       / 100;
+    var grainSize   = sv('s-grain-size');
+
+    var splitHlH    = sv('s-split-hl-h');
+    var splitHlS    = sv('s-split-hl-s')  / 100;
+    var splitShH    = sv('s-split-sh-h');
+    var splitShS    = sv('s-split-sh-s')  / 100;
+    var splitBal    = sv('s-split-bal')   / 100;
+
+    /* Build curve LUTs */
+    var lutRGB = buildCurveLUT(curves.rgb);
+    var lutR   = buildCurveLUT(curves.r);
+    var lutG   = buildCurveLUT(curves.g);
+    var lutB   = buildCurveLUT(curves.b);
+
+    /* Pre-build contrast S-curve */
+    var cLUT = new Uint8Array(256);
+    for (var i = 0; i < 256; i++) {
+      var t = i / 255;
+      // S-curve contrast
+      var c = t;
+      if (contrast !== 0) {
+        var s = contrast > 0 ? 1 + contrast * 3 : 1 / (1 - contrast * 3);
+        c = 1 / (1 + Math.exp(-s * (t - 0.5) * 6)) ;
+        c = clamp(c, 0, 1);
+      }
+      cLUT[i] = clamp(Math.round(c * 255), 0, 255);
+    }
+
+    /* Highlights / Shadows / Whites / Blacks selective LUT */
+    var toneLUT = new Uint8Array(256);
+    for (var i = 0; i < 256; i++) {
+      var t = i / 255;
+      var out = t;
+      // Highlights: only bright region (above 0.5)
+      if (highlights !== 0) {
+        var hlMask = Math.max(0, (t - 0.5) * 2);
+        out += highlights * 0.5 * hlMask * (1 - hlMask * 0.5);
+      }
+      // Shadows: only dark region (below 0.5)
+      if (shadows !== 0) {
+        var shMask = Math.max(0, (0.5 - t) * 2);
+        out += shadows * 0.5 * shMask * (1 - shMask * 0.5);
+      }
+      // Whites: very bright end
+      if (whites !== 0) {
+        var wMask = Math.pow(t, 2);
+        out += whites * 0.4 * wMask;
+      }
+      // Blacks: very dark end
+      if (blacks !== 0) {
+        var bMask = Math.pow(1 - t, 2);
+        out += blacks * -0.4 * bMask;
+      }
+      toneLUT[i] = clamp(Math.round(out * 255), 0, 255);
+    }
+
+    var hslRanges = HSL_RANGES[hslKey];
+
+    /* Process each pixel */
+    var outData = new Uint8ClampedArray(d.length);
+    for (var idx = 0; idx < d.length; idx += 4) {
+      var r = d[idx], g = d[idx+1], b = d[idx+2], a = d[idx+3];
+      if (a === 0) { outData[idx]=r; outData[idx+1]=g; outData[idx+2]=b; outData[idx+3]=0; continue; }
+
+      /* 1. Exposure */
+      if (exposure !== 0) {
+        var ef = Math.pow(2, exposure * 4);
+        r = clamp(r * ef, 0, 255);
+        g = clamp(g * ef, 0, 255);
+        b = clamp(b * ef, 0, 255);
+      }
+
+      /* 2. White balance: temperature & tint */
+      if (temp !== 0) { r = clamp(r + temp * 40, 0, 255); b = clamp(b - temp * 40, 0, 255); }
+      if (tint !== 0) { g = clamp(g + tint * 30, 0, 255); r = clamp(r - tint * 15, 0, 255); b = clamp(b - tint * 15, 0, 255); }
+
+      /* 3. RGB channels */
+      if (redCh !== 0)   r = clamp(r + redCh * 80, 0, 255);
+      if (greenCh !== 0) g = clamp(g + greenCh * 80, 0, 255);
+      if (blueCh !== 0)  b = clamp(b + blueCh * 80, 0, 255);
+
+      /* 4. Contrast */
+      r = cLUT[Math.round(r)]; g = cLUT[Math.round(g)]; b = cLUT[Math.round(b)];
+
+      /* 5. Tone curve (per channel) */
+      r = lutR[Math.round(r)]; g = lutG[Math.round(g)]; b = lutB[Math.round(b)];
+      /* RGB master curve */
+      r = lutRGB[r]; g = lutRGB[g]; b = lutRGB[b];
+
+      /* 6. Highlights / Shadows / Whites / Blacks */
+      r = toneLUT[r]; g = toneLUT[g]; b = toneLUT[b];
+
+      /* 7. Saturation & Vibrance */
+      var hsl = rgbToHsl(r, g, b);
+      var hh = hsl[0], ss = hsl[1], ll = hsl[2];
+      if (saturation !== 0) { ss = clamp(ss + saturation * 0.8, 0, 1); }
+      if (vibrance !== 0) {
+        /* vibrance boosts low-saturation colors more */
+        var vfactor = vibrance * (1 - ss);
+        ss = clamp(ss + vfactor * 0.6, 0, 1);
+      }
+      var rgb2 = hslToRgb(hh, ss, ll);
+      r = rgb2[0]; g = rgb2[1]; b = rgb2[2];
+
+      /* 8. TSL per color */
+      if (hslH !== 0 || hslS !== 0 || hslL !== 0) {
+        var hsl2 = rgbToHsl(r, g, b);
+        var mask = inHueRange(hsl2[0], hslRanges);
+        if (mask > 0) {
+          var nh = ((hsl2[0] + hslH * 1.8 * mask) + 360) % 360;
+          var ns = clamp(hsl2[1] + hslS * mask, 0, 1);
+          var nl = clamp(hsl2[2] + hslL * 0.5 * mask, 0, 1);
+          var rgb3 = hslToRgb(nh, ns, nl);
+          r = Math.round(r * (1-mask) + rgb3[0] * mask);
+          g = Math.round(g * (1-mask) + rgb3[1] * mask);
+          b = Math.round(b * (1-mask) + rgb3[2] * mask);
+        }
+      }
+
+      /* 9. Tone split (shadow/highlight color grading) */
+      if (splitHlS > 0 || splitShS > 0) {
+        var lum = (r + g + b) / (3 * 255);
+        /* balance: -1 = more shadow, +1 = more highlight */
+        var hlWeight = clamp(lum + splitBal * 0.3, 0, 1);
+        var shWeight = clamp(1 - lum - splitBal * 0.3, 0, 1);
+        if (splitHlS > 0 && hlWeight > 0) {
+          var hlRGB = hslToRgb(splitHlH, splitHlS, 0.5);
+          r = clamp(r + (hlRGB[0] - 128) * splitHlS * hlWeight * 0.5, 0, 255);
+          g = clamp(g + (hlRGB[1] - 128) * splitHlS * hlWeight * 0.5, 0, 255);
+          b = clamp(b + (hlRGB[2] - 128) * splitHlS * hlWeight * 0.5, 0, 255);
+        }
+        if (splitShS > 0 && shWeight > 0) {
+          var shRGB = hslToRgb(splitShH, splitShS, 0.5);
+          r = clamp(r + (shRGB[0] - 128) * splitShS * shWeight * 0.5, 0, 255);
+          g = clamp(g + (shRGB[1] - 128) * splitShS * shWeight * 0.5, 0, 255);
+          b = clamp(b + (shRGB[2] - 128) * splitShS * shWeight * 0.5, 0, 255);
+        }
+      }
+
+      outData[idx]   = clamp(Math.round(r), 0, 255);
+      outData[idx+1] = clamp(Math.round(g), 0, 255);
+      outData[idx+2] = clamp(Math.round(b), 0, 255);
+      outData[idx+3] = a;
+    }
+
+    /* Write to outCanvas */
+    var dstCtx = outCanvas.getContext('2d');
+    dstCtx.clearRect(0, 0, W, H);
+    var dstData = dstCtx.createImageData(W, H);
+    dstData.data.set(outData);
+    dstCtx.putImageData(dstData, 0, 0);
+
+    /* Clarity: local contrast (unsharp mask style) */
+    if (clarity !== 0 || sharpness !== 0 || texture !== 0) {
+      applyUnsharpMask(dstCtx, W, H, clarity, sharpness, sharpRadius, texture);
+    }
+
+    /* Vignette */
+    if (vigAmount !== 0) {
+      applyVignette(dstCtx, W, H, vigAmount, vigMid, vigFeather, vigRound);
+    }
+
+    /* Grain */
+    if (grain > 0) {
+      applyGrain(dstCtx, W, H, grain, grainSize);
+    }
+
+    updateSplitSwatches(splitHlH, splitHlS, splitShH, splitShS);
+    updateSliderTracks();
+  }
+
+  /* ── Unsharp mask for clarity / sharpness / texture ── */
+  function applyUnsharpMask(ctx, W, H, clarity, sharpness, radius, texture) {
+    if (W * H > 4000000) return; /* skip on very large images for perf */
+    var blurRadius = Math.round(radius * (clarity !== 0 ? 2 : 1));
+    if (blurRadius < 1) return;
+    /* get current canvas */
+    var imgData = ctx.getImageData(0, 0, W, H);
+    /* create blurred version via OffscreenCanvas + CSS filter */
+    try {
+      var tmp = document.createElement('canvas');
+      tmp.width = W; tmp.height = H;
+      var tctx = tmp.getContext('2d');
+      tctx.filter = 'blur(' + blurRadius + 'px)';
+      tctx.putImageData(imgData, 0, 0);
+      tctx.drawImage(tmp, 0, 0);
+      tctx.filter = 'none';
+      var blurData = tctx.getImageData(0, 0, W, H).data;
+      var orig = imgData.data;
+      var strength = sharpness * 1.5 + Math.abs(clarity) * 1.2 + texture * 0.8;
+      if (clarity < 0) strength = -strength;
+      for (var i = 0; i < orig.length; i += 4) {
+        if (orig[i+3] === 0) continue;
+        orig[i]   = clamp(orig[i]   + (orig[i]   - blurData[i])   * strength, 0, 255);
+        orig[i+1] = clamp(orig[i+1] + (orig[i+1] - blurData[i+1]) * strength, 0, 255);
+        orig[i+2] = clamp(orig[i+2] + (orig[i+2] - blurData[i+2]) * strength, 0, 255);
+      }
+      ctx.putImageData(imgData, 0, 0);
+    } catch(e) {}
+  }
+
+  /* ── Vignette ── */
+  function applyVignette(ctx, W, H, amount, midpoint, feather, roundness) {
+    var cx = W / 2, cy = H / 2;
+    var rx = cx * (1 - roundness * 0.5 + 0.5);
+    var ry = cy * (1 - roundness * 0.5 + 0.5);
+    var innerR = midpoint * 0.5;
+    var outerR = innerR + feather * 0.5;
+    var grad = ctx.createRadialGradient(cx, cy, Math.min(W,H) * innerR, cx, cy, Math.min(W,H) * outerR);
+    if (amount < 0) {
+      /* darkening vignette */
+      grad.addColorStop(0, 'rgba(0,0,0,0)');
+      grad.addColorStop(1, 'rgba(0,0,0,' + Math.abs(amount) * 0.85 + ')');
+    } else {
+      /* lightening vignette */
+      grad.addColorStop(0, 'rgba(0,0,0,0)');
+      grad.addColorStop(1, 'rgba(255,255,255,' + amount * 0.7 + ')');
+    }
+    ctx.save();
+    ctx.globalCompositeOperation = amount < 0 ? 'multiply' : 'screen';
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  }
+
+  /* ── Grain ── */
+  function applyGrain(ctx, W, H, amount, size) {
+    var imgData = ctx.getImageData(0, 0, W, H);
+    var d = imgData.data;
+    var s = Math.max(1, Math.round(size / 4));
+    for (var y = 0; y < H; y += s) {
+      for (var x = 0; x < W; x += s) {
+        var noise = (Math.random() - 0.5) * amount * 120;
+        for (var dy = 0; dy < s && y+dy < H; dy++) {
+          for (var dx = 0; dx < s && x+dx < W; dx++) {
+            var i = ((y+dy) * W + (x+dx)) * 4;
+            if (d[i+3] === 0) continue;
+            d[i]   = clamp(d[i]   + noise, 0, 255);
+            d[i+1] = clamp(d[i+1] + noise, 0, 255);
+            d[i+2] = clamp(d[i+2] + noise, 0, 255);
+          }
+        }
+      }
+    }
+    ctx.putImageData(imgData, 0, 0);
+  }
+
+  /* ── Update split swatches ── */
+  function updateSplitSwatches(hlH, hlS, shH, shS) {
+    var hlEl = document.getElementById('swatch-hl');
+    var shEl = document.getElementById('swatch-sh');
+    if (!hlEl) return;
+    if (hlS > 0) {
+      var c = hslToRgb(hlH, hlS, 0.6);
+      hlEl.style.background = 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')';
+    } else { hlEl.style.background = 'rgba(255,255,255,0.3)'; }
+    if (shS > 0) {
+      var c2 = hslToRgb(shH, shS, 0.3);
+      shEl.style.background = 'rgb(' + c2[0] + ',' + c2[1] + ',' + c2[2] + ')';
+    } else { shEl.style.background = 'rgba(0,0,0,0.2)'; }
+  }
+
+  /* ── Slider track fill (CSS custom prop) ── */
+  function updateSliderTracks() {
+    document.querySelectorAll('.adj-row-slider').forEach(function(el) {
+      var min = parseFloat(el.min), max = parseFloat(el.max), val = parseFloat(el.value);
+      var pct = ((val - min) / (max - min)) * 100;
+      el.style.setProperty('--pct', pct + '%');
+      /* update val label */
+      var id = el.id.replace('s-', 'v-');
+      var vEl = document.getElementById(id);
+      if (vEl) {
+        var label = el.id.includes('split-hl-h') || el.id.includes('split-sh-h')
+          ? Math.round(val) + '°' : Math.round(val);
+        vEl.textContent = label;
+      }
+    });
+  }
+
+  /* ── Wire all sliders ── */
+  document.querySelectorAll('.adj-row-slider').forEach(function(el) {
+    el.addEventListener('pointerdown', function() { pushUndoSnapshot('settings'); });
+    el.addEventListener('input', function() { updateSliderTracks(); scheduleAdj(); });
+  });
+
+  /* ── Reset single slider ── */
+  document.querySelectorAll('.adj-row-reset').forEach(function(el) {
+    el.addEventListener('click', function() {
+      var target = document.getElementById(el.getAttribute('data-target'));
+      if (target) {
+        pushUndoSnapshot('settings');
+        target.value = target.getAttribute('data-def') || 0;
+        updateSliderTracks();
+        scheduleAdj();
+      }
+    });
+  });
+
+  /* ── Reset all ── */
+  window.resetAllAdj = function() {
+    pushUndoSnapshot('settings');
+    document.querySelectorAll('.adj-row-slider').forEach(function(el) {
+      el.value = el.getAttribute('data-def') || 0;
+    });
+    resetCurvesDefault();
+    drawCurve();
+    updateSliderTracks();
+    scheduleAdj();
+    showToast('Tous les réglages réinitialisés.', 'info');
+  };
+
+  /* ── Tabs ── */
+  document.querySelectorAll('.adj-tab').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.adj-tab').forEach(function(b) { b.classList.remove('active'); });
+      document.querySelectorAll('.adj-pane').forEach(function(p) { p.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById('pane-' + btn.getAttribute('data-pane')).classList.add('active');
+      if (btn.getAttribute('data-pane') === 'courbes') drawCurve();
+    });
+  });
+
+  /* ── TSL color selector ── */
+  var currentHslKey = 'all';
+  var hslValues = {};
+  ['all','red','orange','yellow','green','aqua','blue','purple','magenta'].forEach(function(k) {
+    hslValues[k] = {h:0, s:0, l:0};
+  });
+  document.querySelectorAll('.hsl-color-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      pushUndoSnapshot('settings');
+      /* save current */
+      hslValues[currentHslKey] = { h: sv('s-hsl-h'), s: sv('s-hsl-s'), l: sv('s-hsl-l') };
+      /* switch */
+      document.querySelectorAll('.hsl-color-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      currentHslKey = btn.getAttribute('data-hsl');
+      /* restore */
+      var v = hslValues[currentHslKey];
+      document.getElementById('s-hsl-h').value = v.h;
+      document.getElementById('s-hsl-s').value = v.s;
+      document.getElementById('s-hsl-l').value = v.l;
+      updateSliderTracks();
+      scheduleAdj();
+    });
+  });
+  document.querySelectorAll('#hsl-sliders .adj-row-slider').forEach(function(el) {
+    el.addEventListener('input', function() {
+      hslValues[currentHslKey] = { h: sv('s-hsl-h'), s: sv('s-hsl-s'), l: sv('s-hsl-l') };
+      updateSliderTracks();
+      scheduleAdj();
+    });
+  });
+
+  /* ══════════════════
+     COURBES
+  ══════════════════ */
+  var curveCanvas, curveCtx;
+  var activeCurveChannel = 'rgb';
+  var curveDragging = false;
+  var curveDragIndex = -1;
+  var CURVE_COLORS = { rgb: '#aaa', r: '#e05050', g: '#0b9e40', b: '#4488ff' };
+  var CURVE_HIT_PX = 28; /* rayon de détection d'un point existant, généreux pour le tactile */
+
+  function initCurves() {
+    curveCanvas = document.getElementById('curve-canvas');
+    if (!curveCanvas) return;
+    curveCtx = curveCanvas.getContext('2d');
+    drawCurve();
+
+    /* channel btns */
+    document.querySelectorAll('.curve-ch-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.curve-ch-btn').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        activeCurveChannel = btn.getAttribute('data-ch');
+        drawCurve();
+      });
+    });
+
+    /* reset */
+    document.getElementById('curve-reset-btn').addEventListener('click', function() {
+      pushUndoSnapshot('settings');
+      curves[activeCurveChannel] = defaultCurvePts();
+      drawCurve();
+      scheduleAdj();
+    });
+
+    /* mouse / touch */
+    curveCanvas.addEventListener('mousedown', onCurveDown);
+    curveCanvas.addEventListener('mousemove', onCurveMove);
+    curveCanvas.addEventListener('mouseup',   onCurveUp);
+    curveCanvas.addEventListener('mouseleave', onCurveUp);
+    curveCanvas.addEventListener('touchstart', function(e) { e.preventDefault(); onCurveDown(e.touches[0]); }, {passive:false});
+    curveCanvas.addEventListener('touchmove',  function(e) { e.preventDefault(); onCurveMove(e.touches[0]); }, {passive:false});
+    curveCanvas.addEventListener('touchend',   onCurveUp, {passive:true});
+  }
+
+  function curvePos(e) {
+    var r = curveCanvas.getBoundingClientRect();
+    var pad = 16;
+    var cw = curveCanvas.width - pad*2, ch = curveCanvas.height - pad*2;
+    var x = clamp((e.clientX - r.left - pad) / cw, 0, 1);
+    var y = clamp(1 - (e.clientY - r.top  - pad) / ch, 0, 1);
+    return {x, y};
+  }
+
+  /* trouve le point existant le plus proche du toucher, dans un rayon en pixels */
+  function hitTestPoint(pos) {
+    var pad = 16;
+    var iw = curveCanvas.width - pad*2, ih = curveCanvas.height - pad*2;
+    var pts = curves[activeCurveChannel];
+    var best = -1, bestD = Infinity;
+    for (var i = 0; i < pts.length; i++) {
+      var dx = (pts[i].x - pos.x) * iw;
+      var dy = (pts[i].y - pos.y) * ih;
+      var d = Math.hypot(dx, dy);
+      if (d <= CURVE_HIT_PX && d < bestD) { bestD = d; best = i; }
+    }
+    return best;
+  }
+
+  function onCurveDown(e) {
+    var pos = curvePos(e);
+    pushUndoSnapshot('settings');
+    var pts = curves[activeCurveChannel];
+    var hit = hitTestPoint(pos);
+    if (hit >= 0) {
+      curveDragIndex = hit;
+    } else {
+      /* créer un nouveau point à l'endroit touché */
+      var x = clamp(pos.x, 0, 1);
+      var y = clamp(pos.y, 0, 1);
+      pts.push({x: x, y: y});
+      pts.sort(function(a,b) { return a.x - b.x; });
+      curveDragIndex = pts.findIndex(function(p) { return p.x === x && p.y === y; });
+    }
+    curveDragging = true;
+    drawCurve();
+    scheduleAdj();
+  }
+
+  function onCurveMove(e) {
+    if (!curveDragging || curveDragIndex < 0) return;
+    var pos = curvePos(e);
+    var pts = curves[activeCurveChannel];
+    var idx = curveDragIndex;
+    var x = pos.x, y = clamp(pos.y, 0, 1);
+    if (idx === 0) {
+      x = 0;
+    } else if (idx === pts.length - 1) {
+      x = 1;
+    } else {
+      var xMin = pts[idx-1].x + 0.01;
+      var xMax = pts[idx+1].x - 0.01;
+      x = clamp(x, xMin, xMax);
+    }
+    pts[idx].x = x;
+    pts[idx].y = y;
+    drawCurve();
+    scheduleAdj();
+  }
+
+  function onCurveUp() { curveDragging = false; curveDragIndex = -1; }
+
+  function drawCurve() {
+    if (!curveCtx) return;
+    var cw = curveCanvas.width, ch = curveCanvas.height;
+    var pad = 16;
+    var iw = cw - pad*2, ih = ch - pad*2;
+    curveCtx.clearRect(0, 0, cw, ch);
+
+    /* background */
+    curveCtx.fillStyle = 'rgba(20,22,32,0.92)';
+    curveCtx.beginPath();
+    curveCtx.roundRect(0, 0, cw, ch, 10);
+    curveCtx.fill();
+
+    /* histogram grid */
+    curveCtx.strokeStyle = 'rgba(255,255,255,0.07)';
+    curveCtx.lineWidth = 1;
+    for (var g = 1; g < 4; g++) {
+      curveCtx.beginPath();
+      curveCtx.moveTo(pad + g*iw/4, pad);
+      curveCtx.lineTo(pad + g*iw/4, pad+ih);
+      curveCtx.stroke();
+      curveCtx.beginPath();
+      curveCtx.moveTo(pad, pad + g*ih/4);
+      curveCtx.lineTo(pad+iw, pad + g*ih/4);
+      curveCtx.stroke();
+    }
+
+    /* diagonal reference */
+    curveCtx.strokeStyle = 'rgba(255,255,255,0.1)';
+    curveCtx.lineWidth = 1;
+    curveCtx.beginPath();
+    curveCtx.moveTo(pad, pad+ih);
+    curveCtx.lineTo(pad+iw, pad);
+    curveCtx.stroke();
+
+    /* all channels faint */
+    var allCh = ['rgb','r','g','b'];
+    allCh.forEach(function(ch2) {
+      if (ch2 === activeCurveChannel) return;
+      drawCurveLine(curveCtx, curves[ch2], pad, iw, ih, CURVE_COLORS[ch2], 0.25, 1.2);
+    });
+
+    /* active channel */
+    drawCurveLine(curveCtx, curves[activeCurveChannel], pad, iw, ih, CURVE_COLORS[activeCurveChannel], 1, 2);
+  }
+
+  function drawCurveLine(ctx, pts, pad, iw, ih, color, alpha, lw) {
+    if (!pts || pts.length < 2) return;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lw;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    /* échantillonner la spline de Catmull-Rom pour un tracé lisse */
+    var N = 64;
+    for (var i = 0; i <= N; i++) {
+      var t = i / N;
+      var y = clamp(curveValueAt(pts, t), 0, 1);
+      var px = pad + t * iw, py = pad + (1-y) * ih;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  /* ── download (exports outCanvas with all adjustments) ── */
+  window.doDownload = function() {
+    var a = document.createElement('a');
+    a.download = origFileName + '_retouche.png';
+    a.href = outCanvas.toDataURL('image/png');
+    a.click();
+  };
+
+  /* ── reset ── */
+  window.doReset = function() {
+    origDataURL = ''; fileInput.value = '';
+    editOn = false;
+    tog.classList.remove('on');
+    brushOverlay.classList.remove('active');
+    brushCursor.style.display = 'none';
+    previewHint.textContent = 'Prévisualisation · fond transparent';
+    progFill.style.width = '0%';
+    painting = false;
+    brushListenersAttached = false;
+    resetCurvesDefault();
+    resetUndo();
+    resetZoom();
+    document.querySelectorAll('.adj-row-slider').forEach(function(el) {
+      el.value = el.getAttribute('data-def') || 0;
+    });
+    updateSliderTracks();
+    show('up');
+  };
+
+  /* ── toast ── */
+  function showToast(msg, type) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast' + (type === 'info' ? ' info' : '');
+    t.classList.add('show');
+    setTimeout(function() { t.classList.remove('show'); }, 4000);
+  }
+
+  updateSliderTracks();
+  show('up');
+})();
+</script>
+</body>
+</html>
